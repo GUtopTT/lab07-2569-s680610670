@@ -29,22 +29,27 @@ app.get("/", (req: Request, res: Response) => {
 app.get("/students", (req: Request, res: Response) => {
   try {
     const program = req.query.program;
+    const studentId = req.query.studentId;
+
+    let filtered_students = students;
+
+    if (studentId) {
+      filtered_students = filtered_students.filter(
+        (student) => String(student.studentId) === String(studentId)
+      );
+    }
 
     if (program) {
-      let filtered_students = students.filter(
+      filtered_students = filtered_students.filter(
         (student) => student.program === program
       );
-      return res.json({
-        success: true,
-        data: filtered_students,
-      });
-    } else {
-      return res.json({
-        success: true,
-        count: students.length,
-        data: students,
-      });
     }
+
+    return res.json({
+      success: true,
+      count: filtered_students.length,
+      data: filtered_students,
+    });
   } catch (err) {
     return res.json({
       success: false,
@@ -150,12 +155,51 @@ app.put("/students", (req: Request, res: Response) => {
 
 // DELETE /students, body = {studentId}
 app.delete("/students", (req: Request, res: Response) => {
-  res.json({
-    message: "Implement this!"
-  })
+  try {
+    const body = req.body;
+
+    const result = zStudentDeleteBody.safeParse(body);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error.issues[0]?.message,
+      });
+    }
+
+    const foundIndex = students.findIndex(
+      (student) => student.studentId === body.studentId
+    );
+
+    if (foundIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: "Student does not exist",
+      });
+    }
+
+    students.splice(foundIndex, 1);
+
+    return res.json({
+      success: true,
+      message: "Student deleted successfully",
+    });
+  } catch (err) {
+    return res.json({
+      success: false,
+      message: "Something is wrong, please try again",
+      error: err,
+    });
+  }
 });
 
 // GET /api/me
+app.get("/api/me", (req: Request, res: Response) => {
+  return res.json({
+    fullname: "Naattakit Haikham",
+    studentId: "680610670",
+  });
+});
 
 app.listen(port, async () => {
   console.log(`🚀 Server running on http://localhost:${port}`);
